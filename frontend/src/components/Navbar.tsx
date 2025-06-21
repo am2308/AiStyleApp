@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Shirt, User, ShoppingBag, Sparkles, LogOut, Menu, X, Home } from 'lucide-react';
+import { Shirt, User, ShoppingBag, Sparkles, LogOut, Menu, X, Home, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 
@@ -101,6 +101,12 @@ const Navbar: React.FC = () => {
         path: '/marketplace',
         icon: ShoppingBag,
         description: 'Discover new fashion items'
+      },
+      {
+        name: 'Community',
+        path: '/community',
+        icon: Users,
+        description: 'Share and discover styles'
       },
       {
         name: 'Profile',

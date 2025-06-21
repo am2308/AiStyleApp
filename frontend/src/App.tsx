@@ -12,6 +12,7 @@ import ProfilePage from './pages/ProfilePage';
 import WardrobePage from './pages/WardrobePage';
 import RecommendationsPage from './pages/RecommendationsPage';
 import MarketplacePage from './pages/MarketplacePage';
+import CommunityPage from './pages/CommunityPage';
 import FashionBackground from './components/FashionBackground';
 import { Toaster } from 'react-hot-toast';
 
@@ -73,6 +74,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <MarketplacePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/community"
+                  element={
+                    <ProtectedRoute>
+                      <CommunityPage />
                     </ProtectedRoute>
                   }
                 />

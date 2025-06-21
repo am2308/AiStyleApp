@@ -1,0 +1,103 @@
+service: styleai-backend
+
+frameworkVersion: '3'
+
+plugins:
+  - serverless-dotenv-plugin
+ 
+
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ap-south-1
+  memorySize: 512
+  timeout: 30
+  apiGateway:
+    binaryMediaTypes:
+      - 'image/*'
+      - 'multipart/form-data'
+      - 'application/octet-stream'
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    JWT_SECRET: ${env:JWT_SECRET}
+    JWT_EXPIRES_IN: ${env:JWT_EXPIRES_IN, '7d'}
+    USERS_TABLE: StyleAI_Users
+    WARDROBE_TABLE: StyleAI_Wardrobe
+    S3_BUCKET: ${env:S3_BUCKET}
+    HUGGINGFACE_API_KEY: ${env:HUGGINGFACE_API_KEY}
+    EBAY_APP_ID: ${env:EBAY_APP_ID}
+    EBAY_CERT_ID: ${env:EBAY_CERT_ID}
+    EBAY_DEV_ID: ${env:EBAY_DEV_ID}
+    RAPIDAPI_KEY: ${env:RAPIDAPI_KEY}
+    FRONTEND_URL: ${env:FRONTEND_URL}
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/StyleAI_Users"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/StyleAI_Users/index/*"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/StyleAI_Wardrobe"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/StyleAI_Wardrobe/index/*"
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+          Resource:
+            - "arn:aws:s3:::${env:S3_BUCKET}/*"
+        - Effect: Allow
+          Action:
+            - s3:ListBucket
+          Resource:
+            - "arn:aws:s3:::${env:S3_BUCKET}"
+
+
+
+
+
+
+
+
+functions:
+  app:
+    handler: src/lambda.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors:
+            origin: ${env:FRONTEND_URL}
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+      - http:
+          path: /
+          method: ANY
+          cors:
+            origin: ${env:FRONTEND_URL}
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+
+# No resources section since you have existing DynamoDB tables

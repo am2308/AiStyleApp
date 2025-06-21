@@ -1,0 +1,58 @@
+{
+  "name": "styleai-backend",
+  "version": "1.0.0",
+  "description": "StyleAI Backend API",
+  "main": "src/lambda.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "deploy": "serverless deploy",
+    "deploy:prod": "serverless deploy --stage prod",
+    "remove": "serverless remove",
+    "logs": "serverless logs -f app",
+    "offline": "serverless offline",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.454.0",
+    "@aws-sdk/client-s3": "^3.454.0",
+    "@aws-sdk/lib-dynamodb": "^3.454.0",
+    "axios": "^1.7.7",
+    "bcryptjs": "^2.4.3",
+    "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "joi": "^17.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "serverless-http": "^3.2.0",
+    "uuid": "^9.0.1",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.6",
+    "@babel/preset-env": "^7.23.6",
+    "babel-loader": "^9.1.3",
+    "nodemon": "^3.0.1",
+    "serverless": "^3.38.0",
+    "serverless-dotenv-plugin": "^6.0.0",
+    "serverless-offline": "^13.3.0",
+    "serverless-webpack": "^5.13.0",
+    "webpack": "^5.89.0",
+    "webpack-node-externals": "^3.0.0"
+  },
+  "keywords": [
+    "wardrobe",
+    "fashion",
+    "ai",
+    "recommendations",
+    "marketplace"
+  ],
+  "author": "StyleAI Team",
+  "license": "MIT"
+}

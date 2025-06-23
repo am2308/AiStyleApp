@@ -1,0 +1,308 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'StyleAI Application Infrastructure - Complete Serverless Setup'
+
+Parameters:
+  DomainName:
+    Type: String
+    Description: Domain name for the application (e.g., styleai.com)
+    Default: ''
+  
+  HostedZoneId:
+    Type: String
+    Description: Route53 Hosted Zone ID for the domain
+    Default: ''
+  
+  CertificateArn:
+    Type: String
+    Description: ARN of the SSL certificate (must be in us-east-1 for CloudFront)
+    Default: ''
+  
+  Environment:
+    Type: String
+    Description: Deployment environment
+    Default: 'prod'
+    AllowedValues:
+      - 'dev'
+      - 'staging'
+      - 'prod'
+  
+  JwtSecret:
+    Type: String
+    Description: Secret key for JWT token generation
+    NoEcho: true
+    Default: ''
+
+Conditions:
+  HasDomain: !Not [!Equals [!Ref DomainName, '']]
+  HasHostedZone: !And [!Not [!Equals [!Ref HostedZoneId, '']], !Condition HasDomain]
+  HasCertificate: !And [!Not [!Equals [!Ref CertificateArn, '']], !Condition HasDomain]
+
+Resources:
+  # S3 Bucket for Frontend
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !If [HasDomain, !Sub '${DomainName}-frontend', !Sub 'styleai-frontend-${AWS::AccountId}-${Environment}']
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - HEAD
+            AllowedOrigins:
+              - "*"
+            MaxAge: 3000
+
+  # S3 Bucket Policy
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "arn:aws:s3:::${FrontendBucket}/*"
+
+  # S3 Bucket for Wardrobe Images
+  ImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !If [HasDomain, !Sub '${DomainName}-images', !Sub 'styleai-images-${AWS::AccountId}-${Environment}']
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - DELETE
+              - HEAD
+            AllowedOrigins:
+              - "*"
+            MaxAge: 3000
+
+  # S3 Bucket Policy for Images
+  ImagesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ImagesBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "arn:aws:s3:::${ImagesBucket}/*"
+
+  # DynamoDB Tables
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'StyleAI_Users_${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  WardrobeTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'StyleAI_Wardrobe_${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserIdIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  # Lambda Execution Role
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: StyleAIDynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt UsersTable.Arn
+                  - !GetAtt WardrobeTable.Arn
+                  - !Sub '${UsersTable.Arn}/index/*'
+                  - !Sub '${WardrobeTable.Arn}/index/*'
+        - PolicyName: StyleAIS3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub '${ImagesBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Ref ImagesBucket
+
+  # CloudFront Distribution
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases: !If 
+          - HasDomain
+          - [!Ref DomainName, !Sub 'www.${DomainName}']
+          - !Ref AWS::NoValue
+        Origins:
+          - DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            Id: S3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultRootObject: index.html
+        Enabled: true
+        HttpVersion: http2
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        PriceClass: PriceClass_100
+        ViewerCertificate: !If
+          - HasCertificate
+          - AcmCertificateArn: !Ref CertificateArn
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+  # Route53 Records (only if domain is provided)
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasHostedZone
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2 # CloudFront hosted zone ID
+
+  WWWDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasHostedZone
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub 'www.${DomainName}'
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2 # CloudFront hosted zone ID
+
+Outputs:
+  FrontendBucketName:
+    Description: Name of the S3 bucket for frontend
+    Value: !Ref FrontendBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-FrontendBucket'
+  
+  ImagesBucketName:
+    Description: Name of the S3 bucket for images
+    Value: !Ref ImagesBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-ImagesBucket'
+  
+  UsersTableName:
+    Description: Name of the DynamoDB table for users
+    Value: !Ref UsersTable
+    Export:
+      Name: !Sub '${AWS::StackName}-UsersTable'
+  
+  WardrobeTableName:
+    Description: Name of the DynamoDB table for wardrobe items
+    Value: !Ref WardrobeTable
+    Export:
+      Name: !Sub '${AWS::StackName}-WardrobeTable'
+  
+  CloudFrontDistributionId:
+    Description: ID of the CloudFront distribution
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontDistribution'
+  
+  CloudFrontDomainName:
+    Description: Domain name of the CloudFront distribution
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontDomain'
+  
+  WebsiteURL:
+    Description: URL of the website
+    Value: !If [HasDomain, !Sub 'https://${DomainName}', !Sub 'https://${CloudFrontDistribution.DomainName}']
+    Export:
+      Name: !Sub '${AWS::StackName}-WebsiteURL'

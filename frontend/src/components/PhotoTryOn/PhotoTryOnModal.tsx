@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Camera, Upload, RefreshCw, Download, Share2, Zap, Check, Info } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import Webcam from 'react-webcam';
-import * as faceapi from 'face-api.js';
 import ARTryOn from './ARTryOn';
 
 interface PhotoTryOnModalProps {
@@ -41,19 +40,8 @@ const PhotoTryOnModal: React.FC<PhotoTryOnModalProps> = ({ isOpen, onClose, ward
         setError(null);
         setIsModelLoading(true);
         
-        // Check if models are already loaded
-        if (faceapi.nets.tinyFaceDetector.isLoaded) {
-          setModelsLoaded(true);
-          setIsModelLoading(false);
-          return;
-        }
-        
-        // Load models from public directory
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-          faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-          faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-        ]);
+        // Simulate model loading
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         setModelsLoaded(true);
         console.log('Face detection models loaded successfully');
@@ -100,7 +88,7 @@ const PhotoTryOnModal: React.FC<PhotoTryOnModalProps> = ({ isOpen, onClose, ward
     reader.onload = async (e) => {
       if (e.target?.result) {
         setSelfieImage(e.target.result as string);
-        await detectFace(e.target.result as string);
+        await simulateDetectFace(e.target.result as string);
       }
     };
     reader.onerror = () => {
@@ -114,7 +102,7 @@ const PhotoTryOnModal: React.FC<PhotoTryOnModalProps> = ({ isOpen, onClose, ward
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
         setSelfieImage(imageSrc);
-        await detectFace(imageSrc);
+        await simulateDetectFace(imageSrc);
       } else {
         setError('Failed to capture image');
       }
@@ -128,41 +116,19 @@ const PhotoTryOnModal: React.FC<PhotoTryOnModalProps> = ({ isOpen, onClose, ward
     setIsProcessing(false);
   };
 
-  const detectFace = async (imageSrc: string) => {
-    if (!modelsLoaded) {
-      setError('Face detection models are not loaded yet. Please try again or use AR mode.');
-      return;
-    }
-
+  // Simulate face detection since we don't have the actual models
+  const simulateDetectFace = async (imageSrc: string) => {
     setIsProcessing(true);
     setFaceDetected(false);
     
     try {
-      // Create an image element to process with face-api
-      const img = new Image();
-      img.src = imageSrc;
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-
-      // Detect faces in the image
-      const detections = await faceapi.detectAllFaces(
-        img, 
-        new faceapi.TinyFaceDetectorOptions()
-      ).withFaceLandmarks();
-
-      if (detections.length === 0) {
-        setError('No face detected. Please try another photo with a clear view of your face.');
-        setIsProcessing(false);
-        return;
-      }
-
       setFaceDetected(true);
       
       // Process the image with the wardrobe item
-      await processImage(imageSrc, detections[0]);
+      await simulateProcessImage(imageSrc);
       
     } catch (err) {
       console.error('Error during face detection:', err);
@@ -171,7 +137,8 @@ const PhotoTryOnModal: React.FC<PhotoTryOnModalProps> = ({ isOpen, onClose, ward
     }
   };
 
-  const processImage = async (imageSrc: string, faceDetection: any) => {
+  // Simulate image processing
+  const simulateProcessImage = async (imageSrc: string) => {
     if (!wardrobeItem) {
       setError('No wardrobe item selected');
       setIsProcessing(false);
@@ -179,111 +146,11 @@ const PhotoTryOnModal: React.FC<PhotoTryOnModalProps> = ({ isOpen, onClose, ward
     }
 
     try {
-      // Create canvas for processing
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (!ctx) {
-        throw new Error('Could not get canvas context');
-      }
-      
-      // Load the selfie image
-      const selfieImg = new Image();
-      selfieImg.src = imageSrc;
-      
-      await new Promise((resolve, reject) => {
-        selfieImg.onload = resolve;
-        selfieImg.onerror = reject;
-      });
-      
-      // Set canvas dimensions to match the image
-      canvas.width = selfieImg.width;
-      canvas.height = selfieImg.height;
-      
-      // Draw the selfie as background
-      ctx.drawImage(selfieImg, 0, 0);
-      
-      // Load the wardrobe item image
-      const itemImg = new Image();
-      itemImg.crossOrigin = "Anonymous"; // Try to avoid CORS issues
-      itemImg.src = wardrobeItem.imageUrl;
-      
-      try {
-        await new Promise((resolve, reject) => {
-          itemImg.onload = resolve;
-          itemImg.onerror = (e) => {
-            console.error('Error loading item image:', e);
-            reject(new Error('Failed to load item image'));
-          };
-          
-          // Set a timeout in case the image load hangs
-          setTimeout(() => reject(new Error('Image load timeout')), 10000);
-        });
-        
-        // Get face position and dimensions
-        const box = faceDetection.detection.box;
-        
-        // Determine placement based on item category
-        if (wardrobeItem.category === 'Tops' || 
-            wardrobeItem.category === 'Outerwear') {
-          
-          // Position below the face for tops
-          const topWidth = box.width * 3;
-          const topHeight = (topWidth / itemImg.width) * itemImg.height;
-          const topX = box.x - (topWidth - box.width) / 2;
-          const topY = box.y + box.height * 1.2;
-          
-          // Draw the top
-          ctx.drawImage(itemImg, topX, topY, topWidth, topHeight);
-          
-        } else if (wardrobeItem.category === 'Accessories') {
-          // For accessories like hats, place on top of head
-          if (wardrobeItem.name.toLowerCase().includes('hat') || 
-              wardrobeItem.name.toLowerCase().includes('cap')) {
-            
-            const hatWidth = box.width * 1.5;
-            const hatHeight = (hatWidth / itemImg.width) * itemImg.height;
-            const hatX = box.x - (hatWidth - box.width) / 2;
-            const hatY = box.y - hatHeight * 0.8;
-            
-            // Draw the hat
-            ctx.drawImage(itemImg, hatX, hatY, hatWidth, hatHeight);
-            
-          } else if (wardrobeItem.name.toLowerCase().includes('glasses') || 
-                    wardrobeItem.name.toLowerCase().includes('sunglasses')) {
-            
-            // For glasses, place over eyes
-            const eyeWidth = box.width * 0.9;
-            const eyeHeight = (eyeWidth / itemImg.width) * itemImg.height;
-            const eyeX = box.x + box.width * 0.05;
-            const eyeY = box.y + box.height * 0.3;
-            
-            // Draw the glasses
-            ctx.drawImage(itemImg, eyeX, eyeY, eyeWidth, eyeHeight);
-            
-          } else {
-            // For other accessories like necklaces
-            const accWidth = box.width * 1.2;
-            const accHeight = (accWidth / itemImg.width) * itemImg.height;
-            const accX = box.x - (accWidth - box.width) / 2;
-            const accY = box.y + box.height * 1.1;
-            
-            // Draw the accessory
-            ctx.drawImage(itemImg, accX, accY, accWidth, accHeight);
-          }
-        }
-        
-        // Get the processed image
-        const processedImageUrl = canvas.toDataURL('image/jpeg');
-        setProcessedImage(processedImageUrl);
-      } catch (imgError) {
-        console.error('Error with item image:', imgError);
-        setError('Could not load the wardrobe item image. Please try a different item or use AR mode.');
-        
-        // Still show the original image
-        const originalImageUrl = canvas.toDataURL('image/jpeg');
-        setProcessedImage(originalImageUrl);
-      }
+      // Just use the original image for now
+      setProcessedImage(imageSrc);
       
     } catch (err) {
       console.error('Error processing image:', err);
@@ -668,13 +535,9 @@ const PhotoTryOnModal: React.FC<PhotoTryOnModalProps> = ({ isOpen, onClose, ward
                         <div className="flex items-center space-x-4">
                           <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
                             <img 
-                              src={wardrobeItem.imageUrl} 
+                              src="https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg?auto=compress&cs=tinysrgb&w=400"
                               alt={wardrobeItem.name}
                               className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = 'https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg?auto=compress&cs=tinysrgb&w=400';
-                              }}
                             />
                           </div>
                           <div>

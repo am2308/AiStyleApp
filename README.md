@@ -29,6 +29,8 @@ This architecture provides:
 - High reliability and fault tolerance
 - Minimal operational overhead
 
+For detailed architecture, see [SERVERLESS-ARCHITECTURE.md](SERVERLESS-ARCHITECTURE.md).
+
 ## 🛠️ Tech Stack
 
 ### Frontend

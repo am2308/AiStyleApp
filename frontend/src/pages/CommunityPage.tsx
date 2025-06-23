@@ -174,9 +174,9 @@ const CommunityPage: React.FC = () => {
   const handleSaveProfile = async () => {
     try {
       // In a real app, you would update the user profile via API
-      // await updateProfile(profileData);
+      await updateProfile(profileData);
       
-      // For now, just close the modal
+      // Close the modal
       setShowCompleteProfile(false);
     } catch (error) {
       console.error('Failed to update profile:', error);

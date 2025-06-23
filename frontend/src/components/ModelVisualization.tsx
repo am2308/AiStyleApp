@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Palette, RotateCcw, Maximize2, Minimize2, Camera, Download, Share2, Sparkles, Zap, Play, Pause } from 'lucide-react';
 import Avatar3D from './Avatar3D';
+import { PhotoTryOnModal } from './PhotoTryOn';
 
 interface ModelVisualizationProps {
   userProfile: {
@@ -31,6 +32,8 @@ const ModelVisualization: React.FC<ModelVisualizationProps> = ({
   const [lighting, setLighting] = useState<'studio' | 'natural' | 'dramatic'>('studio');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showPhotoTryOn, setShowPhotoTryOn] = useState(false);
+  const [selectedItemForTryOn, setSelectedItemForTryOn] = useState<any>(null);
 
   useEffect(() => {
     // Realistic loading time for 3D model generation
@@ -55,8 +58,13 @@ const ModelVisualization: React.FC<ModelVisualizationProps> = ({
     setLighting(lightings[nextIndex]);
   };
 
+  const handleTryOnWithPhoto = (item: any) => {
+    setSelectedItemForTryOn(item);
+    setShowPhotoTryOn(true);
+  };
+
   const generateStyleAnalysis = () => {
-    const analysis = [];
+    const analysis: string[] = [];
     
     if (userProfile.skinTone) {
       analysis.push(`The color palette beautifully complements your ${userProfile.skinTone} complexion`);
@@ -100,41 +108,30 @@ const ModelVisualization: React.FC<ModelVisualizationProps> = ({
         
         <div className="flex items-center space-x-2">
           <button
-            onClick={handlePoseChange}
-            className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
-            title={`Change pose (${modelPose})`}
+            onClick={() => {
+              // Find the first top or accessory to try on
+              const itemForTryOn = outfitItems.find(item => 
+                item.category === 'Tops' || 
+                item.category === 'Accessories' ||
+                item.category === 'Outerwear'
+              );
+              
+              if (itemForTryOn) {
+                handleTryOnWithPhoto(itemForTryOn);
+              } else {
+                alert('Please select a top, outerwear, or accessory to try on with your photo');
+              }
+            }}
+            className="px-3 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all text-sm"
           >
-            <RotateCcw className="w-5 h-5" />
-          </button>
-          
-          <button
-            onClick={handleLightingChange}
-            className="p-2 text-gray-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-all"
-            title={`Lighting: ${lighting}`}
-          >
-            <Zap className="w-5 h-5" />
-          </button>
-          
-          <button
-            onClick={() => setIsAnimating(!isAnimating)}
-            className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
-            title={isAnimating ? "Pause animation" : "Play animation"}
-          >
-            {isAnimating ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-          </button>
-          
-          <button
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-            title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-          >
-            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+            <Camera className="w-4 h-4 inline mr-1" />
+            Try On with Photo
           </button>
         </div>
       </div>
 
       {/* 3D Model Display Area */}
-      <div className="relative h-96 lg:h-[500px] p-6">
+      <div className="relative h-64 sm:h-80 md:h-96 lg:h-[500px]">
         <AnimatePresence mode="wait">
           {isLoading ? (
             <motion.div
@@ -142,7 +139,7 @@ const ModelVisualization: React.FC<ModelVisualizationProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center h-full"
+              className="absolute inset-0 flex flex-col items-center justify-center"
             >
               <motion.div
                 animate={{ 
@@ -209,11 +206,33 @@ const ModelVisualization: React.FC<ModelVisualizationProps> = ({
             <p className="text-sm text-gray-600">{outfitItems.length} items • Photorealistic rendering</p>
           </div>
           <div className="flex space-x-2">
-            <button className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-              <Download className="w-4 h-4" />
+            <button 
+              onClick={handlePoseChange}
+              className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
+              title={`Change pose (${modelPose})`}
+            >
+              <RotateCcw className="w-5 h-5" />
             </button>
-            <button className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all">
-              <Share2 className="w-4 h-4" />
+            <button 
+              onClick={handleLightingChange}
+              className="p-2 text-gray-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-all"
+              title={`Lighting: ${lighting}`}
+            >
+              <Zap className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => setIsAnimating(!isAnimating)}
+              className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
+              title={isAnimating ? "Pause animation" : "Play animation"}
+            >
+              {isAnimating ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+            </button>
+            <button 
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+              title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+            >
+              {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -255,6 +274,16 @@ const ModelVisualization: React.FC<ModelVisualizationProps> = ({
                   }}
                 />
               </div>
+              {/* Try On Button */}
+              {(item.category === 'Tops' || item.category === 'Accessories' || item.category === 'Outerwear') && (
+                <button
+                  onClick={() => handleTryOnWithPhoto(item)}
+                  className="mt-2 w-full flex items-center justify-center space-x-1 px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs hover:bg-purple-200 transition-colors"
+                >
+                  <Camera className="w-3 h-3" />
+                  <span>Try On</span>
+                </button>
+              )}
             </motion.div>
           ))}
         </div>
@@ -281,6 +310,13 @@ const ModelVisualization: React.FC<ModelVisualizationProps> = ({
           </div>
         </div>
       </div>
+      
+      {/* Photo Try-On Modal */}
+      <PhotoTryOnModal
+        isOpen={showPhotoTryOn}
+        onClose={() => setShowPhotoTryOn(false)}
+        wardrobeItem={selectedItemForTryOn}
+      />
     </div>
   );
 };

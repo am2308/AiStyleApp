@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Shirt, Upload, X, Plus, Search, Filter, Grid3X3, List, 
   Sparkles, TrendingUp, Eye, Heart, Star, ShoppingBag,
-  ChevronDown, ArrowRight, Zap
+  ChevronDown, ArrowRight, Zap, Camera
 } from 'lucide-react';
 import { useWardrobe } from '../contexts/WardrobeContext';
 import { useAuth } from '../contexts/AuthContext';
 import FashionBackground from '../components/FashionBackground';
+import { PhotoTryOnModal } from '../components/PhotoTryOn';
 
 const categories = [
   { name: 'All Items', icon: Grid3X3, count: 0 },
@@ -43,6 +44,8 @@ const WardrobePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPhotoTryOn, setShowPhotoTryOn] = useState(false);
+  const [selectedItemForTryOn, setSelectedItemForTryOn] = useState<any>(null);
 
   // Calculate category counts
   const categoriesWithCounts = categories.map(cat => ({
@@ -79,9 +82,6 @@ const WardrobePage: React.FC = () => {
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
       setSelectedFile(file);
-      // ADD THIS LOG!
-      console.log("Selected file:", acceptedFiles[0]);
-      console.log("File size:", acceptedFiles[0].size, "type:", acceptedFiles[0].type);
       const imageUrl = URL.createObjectURL(file);
       setPreviewImage(imageUrl);
       setError(null);
@@ -128,11 +128,6 @@ const WardrobePage: React.FC = () => {
   };
 
   const handleAddItem = async (e: React.FormEvent) => {
-    // ... your code, validate form, etc.
-    console.log("Submitting item with file:", selectedFile);
-    if (selectedFile) {
-      console.log("File size:", selectedFile.size, "type:", selectedFile.type);
-    }
     e.preventDefault();
     setError(null);
 
@@ -173,6 +168,11 @@ const WardrobePage: React.FC = () => {
     setPreviewImage(null);
     setIsAdding(false);
     setError(null);
+  };
+
+  const handleTryOn = (item: any) => {
+    setSelectedItemForTryOn(item);
+    setShowPhotoTryOn(true);
   };
 
   if (!user?.skinTone) {
@@ -468,6 +468,14 @@ const WardrobePage: React.FC = () => {
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
+                              onClick={() => handleTryOn(item)}
+                              className="p-2 bg-white/90 rounded-full text-gray-700 hover:bg-white transition-colors"
+                            >
+                              <Camera size={16} />
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
                               className="p-2 bg-white/90 rounded-full text-gray-700 hover:bg-white transition-colors"
                             >
                               <Eye size={16} />
@@ -545,6 +553,17 @@ const WardrobePage: React.FC = () => {
                               </div>
                             </div>
                           )}
+                          
+                          {/* Try On Button (List View) */}
+                          {viewMode === 'list' && (
+                            <button
+                              onClick={() => handleTryOn(item)}
+                              className="mt-2 w-full flex items-center justify-center space-x-2 px-3 py-1 bg-purple-100 text-purple-800 rounded-lg hover:bg-purple-200 transition-colors text-sm"
+                            >
+                              <Camera className="w-3 h-3" />
+                              <span>Try On with Photo</span>
+                            </button>
+                          )}
                         </div>
                       </motion.div>
                     ))}
@@ -556,7 +575,7 @@ const WardrobePage: React.FC = () => {
         </div>
       </div>
       
-      {/* Enhanced Add Item Modal */}
+      {/* Add Item Modal */}
       <AnimatePresence>
         {isAdding && (
           <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -766,6 +785,13 @@ const WardrobePage: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+      
+      {/* Photo Try-On Modal */}
+      <PhotoTryOnModal
+        isOpen={showPhotoTryOn}
+        onClose={() => setShowPhotoTryOn(false)}
+        wardrobeItem={selectedItemForTryOn}
+      />
     </div>
   );
 };

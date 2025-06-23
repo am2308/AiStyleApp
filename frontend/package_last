@@ -7,34 +7,30 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "analyze": "vite build --mode analyze"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.1",
-    "react-dropzone": "^14.2.3",
-    "framer-motion": "^11.5.4",
-    "axios": "^1.7.7",
-    "lucide-react": "^0.344.0",
-    "react-hook-form": "^7.48.2",
-    "react-hot-toast": "^2.4.1",
-    "@react-three/fiber": "^8.15.19",
-    "@react-three/drei": "^9.92.7",
-    "three": "^0.160.0",
     "@babylonjs/core": "^6.33.1",
+    "@babylonjs/gui": "^6.33.1",
     "@babylonjs/loaders": "^6.33.1",
     "@babylonjs/materials": "^6.33.1",
-    "@babylonjs/gui": "^6.33.1",
-    "cannon": "^0.6.2",
+    "@react-three/drei": "^9.92.7",
+    "@react-three/fiber": "^8.15.19",
     "@zappar/zappar": "^2.0.0",
-    "@zappar/zappar-react-three-fiber": "^2.0.1",
+    "@zappar/zappar-react-three-fiber": "^2.5.2",
+    "axios": "^1.7.7",
+    "cannon": "^0.6.2",
     "face-api.js": "^0.22.2",
+    "framer-motion": "^11.5.4",
+    "lucide-react": "^0.344.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-dropzone": "^14.2.3",
+    "react-hook-form": "^7.48.2",
+    "react-hot-toast": "^2.4.1",
+    "react-router-dom": "^6.26.1",
     "react-webcam": "^7.2.0",
-    "react-intersection-observer": "^9.8.1",
-    "react-virtualized": "^9.22.5",
-    "workbox-window": "^7.0.0"
+    "three": "^0.160.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
@@ -51,9 +47,6 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
-    "vite": "^5.4.2",
-    "vite-plugin-compression2": "^0.11.0",
-    "rollup-plugin-visualizer": "^5.12.0",
-    "terser": "^5.29.2"
+    "vite": "^5.4.2"
   }
 }

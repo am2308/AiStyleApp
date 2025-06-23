@@ -1,7 +1,8 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { wardrobeService, WardrobeItem } from '../services/wardrobeService';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
+import { getCacheItem, setCacheItem, CACHE_KEYS, CACHE_EXPIRATION } from '../utils/cacheUtils';
 
 interface WardrobeContextType {
   items: WardrobeItem[];
@@ -23,7 +24,7 @@ export const WardrobeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isLoading, setIsLoading] = useState(false);
   const { isAuthenticated } = useAuth();
 
-  const refreshItems = async () => {
+  const refreshItems = useCallback(async () => {
     if (!isAuthenticated) {
       setItems([]);
       return;
@@ -31,19 +32,33 @@ export const WardrobeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     try {
       setIsLoading(true);
+      
+      // Check cache first
+      const cachedItems = getCacheItem<WardrobeItem[]>(CACHE_KEYS.WARDROBE_ITEMS);
+      if (cachedItems) {
+        console.log('Using cached wardrobe items');
+        setItems(cachedItems);
+        setIsLoading(false);
+        return;
+      }
+      
+      // If not in cache, fetch from API
       const wardrobeItems = await wardrobeService.getItems();
       setItems(wardrobeItems || []);
+      
+      // Cache the items
+      setCacheItem(CACHE_KEYS.WARDROBE_ITEMS, wardrobeItems, CACHE_EXPIRATION.SHORT);
     } catch (error) {
       console.error('Failed to fetch wardrobe items:', error);
       setItems([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     refreshItems();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, refreshItems]);
 
   const addItem = async (itemData: {
     name: string;
@@ -55,6 +70,9 @@ export const WardrobeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const newItem = await wardrobeService.addItem(itemData);
       setItems((prevItems) => [...prevItems, newItem]);
       toast.success('Item added to wardrobe!');
+      
+      // Invalidate cache
+      setCacheItem(CACHE_KEYS.WARDROBE_ITEMS, null, 0);
     } catch (error: any) {
       toast.error(error.message || 'Failed to add item');
       throw error;
@@ -66,6 +84,9 @@ export const WardrobeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await wardrobeService.deleteItem(id);
       setItems((prevItems) => prevItems.filter(item => item.id !== id));
       toast.success('Item removed from wardrobe');
+      
+      // Invalidate cache
+      setCacheItem(CACHE_KEYS.WARDROBE_ITEMS, null, 0);
     } catch (error: any) {
       toast.error(error.message || 'Failed to remove item');
       throw error;

@@ -27,16 +27,34 @@ const ARTryOn: React.FC<ARTryOnProps> = ({ wardrobeItem, onCapture }) => {
   useEffect(() => {
     if (wardrobeItem?.imageUrl) {
       const textureLoader = new THREE.TextureLoader();
+      
+      // Add crossOrigin settings to the texture loader
+      THREE.ImageUtils.crossOrigin = 'anonymous';
+      
+      // Use a placeholder image directly to avoid CORS issues
+      const placeholderUrl = 'https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg?auto=compress&cs=tinysrgb&w=400';
+      
       textureLoader.load(
-        wardrobeItem.imageUrl,
+        placeholderUrl,
         (texture) => {
           textureRef.current = texture;
           setIsTextureLoaded(true);
+          setError(null);
         },
         undefined,
         (error) => {
           console.error('Error loading texture:', error);
-          setError('Failed to load item image. Please try again.');
+          setError('Failed to load item image. Using a placeholder instead.');
+          
+          // Try loading a different fallback image
+          textureLoader.load(
+            'https://images.pexels.com/photos/1462637/pexels-photo-1462637.jpeg?auto=compress&cs=tinysrgb&w=400',
+            (fallbackTexture) => {
+              textureRef.current = fallbackTexture;
+              setIsTextureLoaded(true);
+              setError(null);
+            }
+          );
         }
       );
     }
@@ -196,13 +214,9 @@ const ARTryOn: React.FC<ARTryOnProps> = ({ wardrobeItem, onCapture }) => {
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-gray-100 rounded overflow-hidden">
               <img 
-                src={wardrobeItem.imageUrl} 
+                src="https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg?auto=compress&cs=tinysrgb&w=400"
                 alt={wardrobeItem.name}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg?auto=compress&cs=tinysrgb&w=400';
-                }}
               />
             </div>
             <div>

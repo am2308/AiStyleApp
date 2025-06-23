@@ -73,7 +73,7 @@ This architecture provides:
 
 ### Deployment
 
-For detailed deployment instructions, see [README-DEPLOYMENT.md](README-DEPLOYMENT.md).
+For detailed deployment instructions, see [README-DEPLOYMENT.md](Readme-Styleai-Deployment.md).
 
 Quick deployment:
 ```bash

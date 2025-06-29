@@ -1,189 +1,104 @@
-# StyleAI - Personal Wardrobe Assistant
+# StyleAI - AI-Powered Personal Stylist
 
-A full-stack web application that helps users manage their wardrobe and get AI-powered outfit recommendations.
+StyleAI is a revolutionary AI-powered personal styling assistant that combines cutting-edge artificial intelligence with fashion expertise to transform how people discover, organize, and style their wardrobes.
 
-## Features
+## 🚀 Features
 
-- **User Authentication**: Secure signup/login with JWT tokens
-- **Profile Management**: Complexion profiling (skin tone, body type, style preferences)
-- **Wardrobe Management**: Upload and organize clothing items with photos
-- **AI Recommendations**: Get personalized outfit suggestions based on your wardrobe and profile
-- **Marketplace Integration**: Discover new items to complete your outfits
+- **3D Virtual Try-On Technology** with photorealistic modeling
+- **AI-Powered Outfit Recommendations** based on personal style
+- **Smart Wardrobe Management** with digital organization
+- **Marketplace Integration** for intelligent shopping suggestions
+- **Social Style Sharing** with community features
+- **Photo Try-On** to see how items look on you
+- **Style Challenges** to engage with the community
 
-## Tech Stack
+## 🏗️ Architecture
+
+StyleAI uses a fully serverless architecture on AWS:
+
+- **Frontend**: React SPA hosted on S3 and delivered via CloudFront
+- **Backend**: Express.js on AWS Lambda with API Gateway
+- **Database**: DynamoDB for users and wardrobe items
+- **Storage**: S3 for wardrobe item images
+- **CDN**: CloudFront for global content delivery
+
+This architecture provides:
+- Automatic scaling to millions of users
+- Pay-per-use pricing model
+- Global availability with low latency
+- High reliability and fault tolerance
+- Minimal operational overhead
+
+For detailed architecture, see [SERVERLESS-ARCHITECTURE.md](SERVERLESS-ARCHITECTURE.md).
+
+## 🛠️ Tech Stack
 
 ### Frontend
 - React 18 with TypeScript
 - Vite for build tooling
 - Tailwind CSS for styling
 - Framer Motion for animations
-- React Router for navigation
-- React Hook Form for form handling
-- Axios for API calls
+- Three.js for 3D visualization
+- Zappar for AR features
 
 ### Backend
 - Node.js with Express
-- AWS DynamoDB for data storage
-- AWS S3 for image storage
-- OpenAI API for outfit recommendations
+- AWS Lambda for serverless execution
+- DynamoDB for data storage
+- S3 for image storage
 - JWT for authentication
-- Multer for file uploads
 
-## Setup Instructions
+## 📋 Getting Started
 
 ### Prerequisites
-- Node.js 18+ installed
-- AWS account with DynamoDB and S3 access
-- OpenAI API key
+- Node.js 18+
+- AWS account (for deployment)
+- AWS CLI configured
 
-### Backend Setup
+### Local Development
 
-1. Navigate to the backend directory:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/styleai.git
+   cd styleai
+   ```
+
+2. Start the local development environment:
+   ```bash
+   chmod +x scripts/local-dev.sh
+   ./scripts/local-dev.sh
+   ```
+
+3. Access the application:
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:3000/api
+
+### Deployment
+
+For detailed deployment instructions, see [README-DEPLOYMENT.md](Readme-Styleai-Deployment.md).
+
+Quick deployment:
 ```bash
-cd backend
+# With custom domain
+./scripts/deploy-all.sh --domain yourdomain.com --hosted-zone your-zone-id --certificate your-cert-arn
+
+# Without custom domain
+./scripts/deploy-all.sh
 ```
 
-2. Install dependencies:
+## 🧪 Testing
+
 ```bash
-npm install
-```
-
-3. Create environment file:
-```bash
-cp .env.example .env
-```
-
-4. Configure your environment variables in `.env`:
-```env
-PORT=3000
-NODE_ENV=development
-JWT_SECRET=
-JWT_EXPIRES_IN=7d
-
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-
-USERS_TABLE=StyleAI_Users
-WARDROBE_TABLE=StyleAI_Wardrobe
-
-S3_BUCKET=styleai-wardrobe-images
-S3_REGION=us-east-1
-
-OPENAI_API_KEY=
-
-FRONTEND_URL=http://localhost:5173
-```
-
-5. Create DynamoDB tables:
-```bash
-node scripts/createTables.js
-```
-
-6. Start the development server:
-```bash
-npm run dev
-```
-
-### Frontend Setup
-
-1. Navigate to the frontend directory:
-```bash
+# Run frontend tests
 cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create environment file:
-```bash
-cp .env.example .env
-```
-
-4. Configure your environment variables in `.env`:
-```env
-VITE_API_URL=http://localhost:3000/api
-VITE_APP_NAME=StyleAI
-```
-
-5. Start the development server:
-```bash
-npm run dev
-```
-
-## AWS Configuration
-
-### DynamoDB Tables
-
-The application uses two DynamoDB tables:
-
-1. **StyleAI_Users**: Stores user profiles and authentication data
-2. **StyleAI_Wardrobe**: Stores wardrobe items with references to S3 images
-
-### S3 Bucket
-
-Create an S3 bucket for storing wardrobe item images. Make sure to:
-- Enable public read access for uploaded images
-- Configure CORS to allow uploads from your frontend domain
-
-### IAM Permissions
-
-Your AWS user/role needs the following permissions:
-- DynamoDB: CreateTable, PutItem, GetItem, UpdateItem, DeleteItem, Query
-- S3: PutObject, DeleteObject, GetObject
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/signup` - Create new user account
-- `POST /api/auth/login` - User login
-- `GET /api/auth/profile` - Get user profile
-- `PUT /api/auth/profile` - Update user profile
-
-### Wardrobe
-- `GET /api/wardrobe` - Get user's wardrobe items
-- `POST /api/wardrobe` - Add new wardrobe item (with image upload)
-- `DELETE /api/wardrobe/:id` - Delete wardrobe item
-
-### Recommendations
-- `GET /api/recommendations` - Get AI outfit recommendations
-- `GET /api/marketplace` - Get marketplace item suggestions
-
-## Usage
-
-1. **Sign Up**: Create an account with your email and password
-2. **Complete Profile**: Set your skin tone, body type, and style preferences
-3. **Add Wardrobe Items**: Upload photos and details of your clothing items
-4. **Get Recommendations**: View AI-generated outfit suggestions
-5. **Explore Marketplace**: Discover new items to complete your wardrobe
-
-## Development
-
-### Running Tests
-```bash
-# Backend
-cd backend
 npm test
 
-# Frontend
-cd frontend
+# Run backend tests
+cd backend
 npm test
 ```
 
-### Building for Production
-```bash
-# Backend
-cd backend
-npm start
-
-# Frontend
-cd frontend
-npm run build
-```
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -191,6 +106,14 @@ npm run build
 4. Add tests if applicable
 5. Submit a pull request
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License.
+
+## 🙏 Acknowledgements
+
+- [Pexels](https://www.pexels.com/) for providing free stock photos
+- [Lucide Icons](https://lucide.dev/) for beautiful icons
+- [Three.js](https://threejs.org/) for 3D rendering capabilities
+- [Zappar](https://www.zappar.com/) for AR functionality
+- [AWS](https://aws.amazon.com/) for serverless infrastructure

@@ -4,6 +4,33 @@ import { Toaster } from 'react-hot-toast';
 import App from './App.tsx';
 import './index.css';
 
+// Performance monitoring
+const reportWebVitals = () => {
+  if (typeof window !== 'undefined' && 'performance' in window && 'getEntriesByType' in performance) {
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const paintMetrics = performance.getEntriesByType('paint');
+        const navigationTiming = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        
+        if (paintMetrics.length > 0) {
+          const fcp = paintMetrics.find(({ name }) => name === 'first-contentful-paint');
+          if (fcp) {
+            console.log('First Contentful Paint:', Math.round(fcp.startTime), 'ms');
+          }
+        }
+        
+        if (navigationTiming) {
+          const pageLoadTime = navigationTiming.loadEventEnd - navigationTiming.startTime;
+          console.log('Total Page Load Time:', Math.round(pageLoadTime), 'ms');
+          
+          const domContentLoaded = navigationTiming.domContentLoadedEventEnd - navigationTiming.startTime;
+          console.log('DOM Content Loaded:', Math.round(domContentLoaded), 'ms');
+        }
+      }, 0);
+    });
+  }
+};
+
 // Create a root once and reuse it
 const rootElement = document.getElementById('root');
 
@@ -30,7 +57,7 @@ root.render(
   </StrictMode>
 );
 
-// Add service worker registration for PWA support
+// Register service worker for PWA support
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js').then(registration => {
@@ -40,3 +67,6 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+// Report web vitals
+reportWebVitals();

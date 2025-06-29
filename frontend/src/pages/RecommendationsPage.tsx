@@ -7,12 +7,13 @@ import {
 import { recommendationService, OutfitRecommendation, ShoppingListItem } from '../services/recommendationService';
 import { useWardrobe } from '../contexts/WardrobeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { useNavigate } from 'react-router-dom';
-import SubscriptionModal from '../components/SubscriptionModal';
 import ModelVisualization from '../components/ModelVisualization';
 import StyleInsights from '../components/StyleInsights';
 import SocialSharing from '../components/SocialSharing';
 import OutfitCalendar from '../components/OutfitCalendar';
+import SubscriptionPaywall from '../components/SubscriptionPaywall';
 
 const occasions = [
   'Casual',
@@ -27,6 +28,7 @@ const occasions = [
 const RecommendationsPage: React.FC = () => {
   const { items } = useWardrobe();
   const { user } = useAuth();
+  const { isSubscribed } = useSubscription();
   const navigate = useNavigate();
   const [recommendations, setRecommendations] = useState<OutfitRecommendation[]>([]);
   const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
@@ -40,15 +42,27 @@ const RecommendationsPage: React.FC = () => {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscriptionRequired, setSubscriptionRequired] = useState(false);
   const [selectedOutfitForModel, setSelectedOutfitForModel] = useState<number>(0);
+  const [remainingFreeUses, setRemainingFreeUses] = useState<number>(3);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const fetchRecommendations = async () => {
     try {
       setIsLoading(true);
+      
+      // If user is not subscribed and has no free uses left, show paywall
+      if (!isSubscribed && remainingFreeUses <= 0) {
+        setShowPaywall(true);
+        setIsLoading(false);
+        return;
+      }
+      
       const response = await recommendationService.getOutfitRecommendations(selectedOccasion || undefined);
       
+      // If subscription is required according to the API response
       if (response.subscriptionRequired) {
         setSubscriptionRequired(true);
-        setAccessInfo(response);
+        setShowPaywall(true);
+        setIsLoading(false);
         return;
       }
       
@@ -57,6 +71,11 @@ const RecommendationsPage: React.FC = () => {
       setSubscriptionInfo(response.subscriptionInfo);
       setAccessInfo(response.accessInfo);
       
+      // Update remaining free uses if not subscribed
+      if (!isSubscribed && response.accessInfo?.remaining !== undefined) {
+        setRemainingFreeUses(response.accessInfo.remaining);
+      }
+      
       // Check if any recommendations have low confidence
       const hasLowConfidence = response.recommendations?.some(rec => rec.confidence < 0.8);
       setShowSmartSuggestion(hasLowConfidence);
@@ -64,7 +83,7 @@ const RecommendationsPage: React.FC = () => {
       console.error('Failed to fetch recommendations:', error);
       if (error.response?.status === 403) {
         setSubscriptionRequired(true);
-        setAccessInfo(error.response.data);
+        setShowPaywall(true);
       } else {
         setRecommendations([]);
       }
@@ -76,6 +95,14 @@ const RecommendationsPage: React.FC = () => {
   const fetchShoppingList = async () => {
     try {
       setIsLoading(true);
+      
+      // If user is not subscribed, show paywall for shopping feature
+      if (!isSubscribed) {
+        setShowPaywall(true);
+        setIsLoading(false);
+        return;
+      }
+      
       const response = await recommendationService.getSmartShoppingList();
       setShoppingList(response.shoppingList || []);
     } catch (error) {
@@ -110,12 +137,6 @@ const RecommendationsPage: React.FC = () => {
     navigate(`/marketplace?category=${item.category}&smart=true`);
   };
 
-  const handleSubscriptionSuccess = () => {
-    setShowSubscriptionModal(false);
-    setSubscriptionRequired(false);
-    fetchRecommendations();
-  };
-
   const handlePlanOutfit = (date: string, occasion: string) => {
     setSelectedOccasion(occasion);
     setActiveTab('outfits');
@@ -130,7 +151,7 @@ const RecommendationsPage: React.FC = () => {
         fetchShoppingList();
       }
     }
-  }, [items.length, selectedOccasion, activeTab]);
+  }, [items.length, selectedOccasion, activeTab, isSubscribed]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -155,6 +176,16 @@ const RecommendationsPage: React.FC = () => {
 
   const getOutfitItems = (recommendation: OutfitRecommendation) => {
     return items.filter(item => recommendation.items.includes(item.id));
+  };
+
+  const handleTabChange = (tab: 'outfits' | 'shopping' | 'insights' | 'calendar') => {
+    // If user is not subscribed and trying to access premium features
+    if (!isSubscribed && (tab === 'shopping' || tab === 'insights')) {
+      setShowPaywall(true);
+      return;
+    }
+    
+    setActiveTab(tab);
   };
 
   if (items.length === 0) {
@@ -197,7 +228,7 @@ const RecommendationsPage: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <h3 className="font-semibold text-purple-900">Free Trial</h3>
+                      <h3 className="font-semibold text-purple-900">Free Plan</h3>
                       <p className="text-sm text-purple-700">
                         {accessInfo?.remaining || 0} free recommendations remaining
                       </p>
@@ -207,7 +238,7 @@ const RecommendationsPage: React.FC = () => {
               </div>
               {subscriptionInfo.status !== 'active' && (
                 <button
-                  onClick={() => setShowSubscriptionModal(true)}
+                  onClick={() => setShowPaywall(true)}
                   className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
                 >
                   Upgrade
@@ -226,7 +257,7 @@ const RecommendationsPage: React.FC = () => {
               You've used all your free recommendations. Subscribe to get unlimited outfit suggestions!
             </p>
             <button
-              onClick={() => setShowSubscriptionModal(true)}
+              onClick={() => setShowPaywall(true)}
               className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors"
             >
               View Subscription Plans
@@ -278,26 +309,28 @@ const RecommendationsPage: React.FC = () => {
             Outfit Ideas
           </button>
           <button
-            onClick={() => setActiveTab('shopping')}
+            onClick={() => handleTabChange('shopping')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'shopping'
                 ? 'bg-white text-primary-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
-            }`}
+            } ${!isSubscribed ? 'flex items-center' : ''}`}
           >
             <TrendingUp className="inline w-4 h-4 mr-2" />
             Smart Shopping
+            {!isSubscribed && <Crown className="w-3 h-3 ml-1 text-amber-500" />}
           </button>
           <button
-            onClick={() => setActiveTab('insights')}
+            onClick={() => handleTabChange('insights')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'insights'
                 ? 'bg-white text-primary-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
-            }`}
+            } ${!isSubscribed ? 'flex items-center' : ''}`}
           >
             <BarChart3 className="inline w-4 h-4 mr-2" />
             Style Insights
+            {!isSubscribed && <Crown className="w-3 h-3 ml-1 text-amber-500" />}
           </button>
           <button
             onClick={() => setActiveTab('calendar')}
@@ -598,11 +631,14 @@ const RecommendationsPage: React.FC = () => {
         )
       )}
 
-      {/* Subscription Modal */}
-      <SubscriptionModal
-        isOpen={showSubscriptionModal}
-        onClose={() => setShowSubscriptionModal(false)}
-        onSuccess={handleSubscriptionSuccess}
+      {/* Subscription Paywall */}
+      <SubscriptionPaywall
+        isOpen={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        feature={activeTab === 'outfits' ? 'recommendations' : 
+                activeTab === 'shopping' ? 'shopping' : 
+                activeTab === 'insights' ? 'tryOn' : 'recommendations'}
+        remainingUses={remainingFreeUses}
       />
     </div>
   );

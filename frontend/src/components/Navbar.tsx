@@ -1,12 +1,14 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Shirt, User, ShoppingBag, Sparkles, LogOut, Menu, X, Home, Users } from 'lucide-react';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { Shirt, User, ShoppingBag, Sparkles, LogOut, Menu, X, Home, Users, Crown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { isSubscribed } = useSubscription();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -146,6 +148,21 @@ const Navbar: React.FC = () => {
                   <span className="font-medium">{item.name}</span>
                 </Link>
               ))}
+              
+              {/* Subscription Button */}
+              <Link
+                to="/subscription"
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                  isActive('/subscription')
+                    ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 shadow-sm'
+                    : isSubscribed 
+                      ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-700'
+                      : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                }`}
+              >
+                <Crown size={18} />
+                <span className="font-medium">{isSubscribed ? 'Premium' : 'Upgrade'}</span>
+              </Link>
             </div>
 
             {/* User Menu */}
@@ -205,6 +222,27 @@ const Navbar: React.FC = () => {
                       </div>
                     </Link>
                   ))}
+                  
+                  {/* Mobile Subscription Button */}
+                  <Link
+                    to="/subscription"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+                      isActive('/subscription')
+                        ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
+                        : isSubscribed 
+                          ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-700'
+                          : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                    }`}
+                  >
+                    <Crown size={20} />
+                    <div>
+                      <p className="font-medium">{isSubscribed ? 'Premium Active' : 'Upgrade to Premium'}</p>
+                      <p className="text-xs text-gray-500">
+                        {isSubscribed ? 'Manage subscription' : 'Unlock all features'}
+                      </p>
+                    </div>
+                  </Link>
                   
                   {/* Mobile User Info */}
                   <div className="px-4 py-3 border-t border-gray-200 mt-4">

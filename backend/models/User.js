@@ -20,6 +20,11 @@ export class User {
     this.subscriptionEndDate = userData.subscriptionEndDate || null;
     this.recommendationsUsed = userData.recommendationsUsed || 0;
     this.freeRecommendationsLimit = userData.freeRecommendationsLimit || 3;
+    
+    // RevenueCat fields
+    this.revenueCatProductId = userData.revenueCatProductId || null;
+    this.revenueCatTransactionId = userData.revenueCatTransactionId || null;
+    this.revenueCatPurchaseDate = userData.revenueCatPurchaseDate || null;
   }
 
   // Check if user can access recommendations
@@ -106,6 +111,28 @@ export class User {
     );
   }
 
+  // Update RevenueCat subscription info
+  async updateRevenueCatInfo(productId, transactionId, purchaseDate) {
+    this.revenueCatProductId = productId;
+    this.revenueCatTransactionId = transactionId;
+    this.revenueCatPurchaseDate = purchaseDate;
+    this.updatedAt = new Date().toISOString();
+    
+    await dynamoDB.send(
+      new UpdateCommand({
+        TableName: TABLES.USERS,
+        Key: { id: this.id },
+        UpdateExpression: 'SET revenueCatProductId = :productId, revenueCatTransactionId = :transactionId, revenueCatPurchaseDate = :purchaseDate, updatedAt = :updated',
+        ExpressionAttributeValues: {
+          ':productId': this.revenueCatProductId,
+          ':transactionId': this.revenueCatTransactionId,
+          ':purchaseDate': this.revenueCatPurchaseDate,
+          ':updated': this.updatedAt
+        }
+      })
+    );
+  }
+
   // Check if subscription is expired
   isSubscriptionExpired() {
     if (this.subscriptionStatus !== 'active' || !this.subscriptionEndDate) {
@@ -124,7 +151,9 @@ export class User {
       endDate: this.subscriptionEndDate,
       isExpired: this.isSubscriptionExpired(),
       recommendationsUsed: this.recommendationsUsed,
-      freeRecommendationsLimit: this.freeRecommendationsLimit
+      freeRecommendationsLimit: this.freeRecommendationsLimit,
+      revenueCatProductId: this.revenueCatProductId,
+      revenueCatPurchaseDate: this.revenueCatPurchaseDate
     };
   }
 

@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { WardrobeProvider } from './contexts/WardrobeContext';
+import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import FashionBackground from './components/FashionBackground';
@@ -19,6 +20,7 @@ const WardrobePage = lazy(() => import('./pages/WardrobePage'));
 const RecommendationsPage = lazy(() => import('./pages/RecommendationsPage'));
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage'));
 const CommunityPage = lazy(() => import('./pages/CommunityPage'));
+const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 
 // Loading component
 const PageLoader = () => (
@@ -31,90 +33,100 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <WardrobeProvider>
-          <Router>
-            <div className="min-h-screen relative">
-              {/* Global Fashion Background */}
-              <FashionBackground />
-              
-              {/* Navigation */}
-              <Navbar />
-              
-              {/* Main Content */}
-              <main className="relative z-10">
-                <ErrorBoundary>
-                  <Suspense fallback={<PageLoader />}>
-                    <Routes>
-                      {/* Public Routes */}
-                      <Route path="/" element={<LandingPage />} />
-                      <Route path="/login" element={<LoginPage />} />
-                      <Route path="/signup" element={<SignupPage />} />
-                      
-                      {/* Protected Routes */}
-                      <Route
-                        path="/dashboard"
-                        element={
-                          <ProtectedRoute>
-                            <DashboardPage />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/profile"
-                        element={
-                          <ProtectedRoute>
-                            <ProfilePage />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/wardrobe"
-                        element={
-                          <ProtectedRoute>
-                            <WardrobePage />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/recommendations"
-                        element={
-                          <ProtectedRoute>
-                            <RecommendationsPage />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/marketplace"
-                        element={
-                          <ProtectedRoute>
-                            <MarketplacePage />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/community"
-                        element={
-                          <ProtectedRoute>
-                            <CommunityPage />
-                          </ProtectedRoute>
-                        }
-                      />
-                      
-                      {/* Catch all route - redirect to landing page */}
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                  </Suspense>
-                </ErrorBoundary>
-              </main>
-              
-              {/* Toast Notifications */}
-              <Toaster position="top-right" />
-              
-              {/* Bolt.new Badge */}
-              <BoltBadge position="bottom-right" />
-            </div>
-          </Router>
-        </WardrobeProvider>
+        <SubscriptionProvider>
+          <WardrobeProvider>
+            <Router>
+              <div className="min-h-screen relative">
+                {/* Global Fashion Background */}
+                <FashionBackground />
+                
+                {/* Navigation */}
+                <Navbar />
+                
+                {/* Main Content */}
+                <main className="relative z-10">
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <Routes>
+                        {/* Public Routes */}
+                        <Route path="/" element={<LandingPage />} />
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/signup" element={<SignupPage />} />
+                        
+                        {/* Protected Routes */}
+                        <Route
+                          path="/dashboard"
+                          element={
+                            <ProtectedRoute>
+                              <DashboardPage />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/profile"
+                          element={
+                            <ProtectedRoute>
+                              <ProfilePage />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/wardrobe"
+                          element={
+                            <ProtectedRoute>
+                              <WardrobePage />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/recommendations"
+                          element={
+                            <ProtectedRoute>
+                              <RecommendationsPage />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/marketplace"
+                          element={
+                            <ProtectedRoute>
+                              <MarketplacePage />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/community"
+                          element={
+                            <ProtectedRoute>
+                              <CommunityPage />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/subscription"
+                          element={
+                            <ProtectedRoute>
+                              <SubscriptionPage />
+                            </ProtectedRoute>
+                          }
+                        />
+                        
+                        {/* Catch all route - redirect to landing page */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </Suspense>
+                  </ErrorBoundary>
+                </main>
+                
+                {/* Toast Notifications */}
+                <Toaster position="top-right" />
+                
+                {/* Bolt.new Badge */}
+                <BoltBadge position="bottom-right" />
+              </div>
+            </Router>
+          </WardrobeProvider>
+        </SubscriptionProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

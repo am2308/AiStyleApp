@@ -4,10 +4,98 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="StyleAI - Your AI-powered personal stylist with 3D virtual try-on technology" />
+    <meta name="theme-color" content="#8b5cf6" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    
+    <!-- Preload critical assets -->
+    <link rel="preconnect" href="https://images.pexels.com" />
+    
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    
     <title>StyleAI - Your Personal Wardrobe Assistant</title>
+    
+    <!-- Add CORS helper script -->
+    <script>
+      // Helper function to fix CORS issues with image loading
+      function fixImageCORS() {
+        // Create a global function to handle CORS URLs
+        window.createCorsProxyUrl = function(originalUrl) {
+          // If the URL is already from a CORS-friendly source, return it as is
+          if (originalUrl.includes('pexels.com')) {
+            return originalUrl;
+          }
+          
+          // For S3 images, we can try using CloudFront URL if available
+          if (originalUrl.includes('amazonaws.com')) {
+            // Just return the original URL for now
+            return originalUrl;
+          }
+          
+          // Fallback to a placeholder image if we can't handle the URL
+          if (originalUrl.includes('amazonaws.com')) {
+            // Determine category from URL path
+            let fallbackUrl = 'https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg?auto=compress&cs=tinysrgb&w=400';
+            
+            if (originalUrl.includes('/Tops/')) {
+              fallbackUrl = 'https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg?auto=compress&cs=tinysrgb&w=400';
+            } else if (originalUrl.includes('/Bottoms/')) {
+              fallbackUrl = 'https://images.pexels.com/photos/1598507/pexels-photo-1598507.jpeg?auto=compress&cs=tinysrgb&w=400';
+            } else if (originalUrl.includes('/Dresses/')) {
+              fallbackUrl = 'https://images.pexels.com/photos/985635/pexels-photo-985635.jpeg?auto=compress&cs=tinysrgb&w=400';
+            } else if (originalUrl.includes('/Outerwear/')) {
+              fallbackUrl = 'https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?auto=compress&cs=tinysrgb&w=400';
+            } else if (originalUrl.includes('/Footwear/')) {
+              fallbackUrl = 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=400';
+            } else if (originalUrl.includes('/Accessories/')) {
+              fallbackUrl = 'https://images.pexels.com/photos/1927259/pexels-photo-1927259.jpeg?auto=compress&cs=tinysrgb&w=400';
+            }
+            
+            return fallbackUrl;
+          }
+          
+          return originalUrl;
+        };
+        
+        // Override the Image constructor to add crossOrigin by default
+        const originalImage = window.Image;
+        window.Image = function(width, height) {
+          const img = new originalImage(width, height);
+          img.crossOrigin = "anonymous";
+          return img;
+        };
+        window.Image.prototype = originalImage.prototype;
+        
+        console.log('CORS image helper installed');
+      }
+      
+      // Run the CORS fix
+      fixImageCORS();
+      
+      // Add performance monitoring
+      window.addEventListener('load', function() {
+        // Report performance metrics
+        setTimeout(function() {
+          if (window.performance) {
+            const timing = window.performance.timing;
+            const pageLoadTime = timing.loadEventEnd - timing.navigationStart;
+            console.log('Page load time:', pageLoadTime + 'ms');
+          }
+        }, 0);
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <noscript>
+      <div style="padding: 2rem; text-align: center;">
+        <h1>JavaScript Required</h1>
+        <p>StyleAI requires JavaScript to function. Please enable JavaScript in your browser settings.</p>
+      </div>
+    </noscript>
   </body>
 </html>

@@ -7,6 +7,7 @@ import Navbar from './components/Navbar';
 import FashionBackground from './components/FashionBackground';
 import { Toaster } from 'react-hot-toast';
 import ErrorBoundary from './components/ErrorBoundary';
+import BoltBadge from './components/BoltBadge';
 
 // Lazy-loaded components
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -108,6 +109,9 @@ function App() {
               
               {/* Toast Notifications */}
               <Toaster position="top-right" />
+              
+              {/* Bolt.new Badge */}
+              <BoltBadge position="bottom-right" />
             </div>
           </Router>
         </WardrobeProvider>
